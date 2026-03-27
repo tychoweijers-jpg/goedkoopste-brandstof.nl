@@ -1,273 +1,48 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TankGoedkoop — Goedkoopste tankstations bij jou in de buurt</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; }
-    .header { background: white; padding: 1.5rem; border-bottom: 1px solid #e8e8e5; display: flex; align-items: center; gap: 10px; }
-    .logo { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-    .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: #E24B4A; }
-    .tagline { font-size: 13px; color: #888; margin-top: 2px; }
-    .container { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem; }
-    .search-box { background: white; border-radius: 12px; border: 1px solid #e8e8e5; padding: 1.25rem; margin-bottom: 1rem; }
-    .search-row { display: flex; gap: 8px; }
-    .search-row input { flex: 1; padding: 10px 14px; border: 1px solid #e0e0db; border-radius: 8px; font-size: 14px; }
-    .search-row select { padding: 10px 12px; border: 1px solid #e0e0db; border-radius: 8px; font-size: 14px; background: white; }
-    .search-row button { padding: 10px 20px; background: #E24B4A; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
-    .search-row button:hover { background: #c43b3a; }
-    .location-hint { font-size: 13px; color: #888; margin-top: 10px; }
-    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
-    .filter-btn { padding: 6px 14px; border: 1px solid #e0e0db; border-radius: 999px; font-size: 13px; background: white; color: #666; cursor: pointer; }
-    .filter-btn.active { background: #E24B4A; border-color: #E24B4A; color: white; }
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
-    .stat { background: white; border-radius: 10px; border: 1px solid #e8e8e5; padding: 0.85rem 1rem; }
-    .stat-val { font-size: 20px; font-weight: 600; }
-    .stat-lbl { font-size: 12px; color: #888; margin-top: 2px; }
-    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 13px; color: #888; }
-    .stations { display: flex; flex-direction: column; gap: 10px; }
-    .card { background: white; border-radius: 12px; border: 1px solid #e8e8e5; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 16px; }
-    .card.cheapest { border: 2px solid #E24B4A; }
-    .logo-box { width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
-    .info { flex: 1; }
-    .name { font-size: 15px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-    .badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #FCEBEB; color: #A32D2D; font-weight: 500; }
-    .address { font-size: 13px; color: #666; margin-top: 2px; }
-    .dist { font-size: 12px; color: #aaa; margin-top: 2px; }
-    .prices { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-    .price-main { font-size: 22px; font-weight: 600; }
-    .price-lbl { font-size: 11px; color: #aaa; }
-    .price-other { font-size: 12px; color: #aaa; }
-    .updated { font-size: 12px; color: #aaa; margin-top: 1rem; text-align: center; }
-    .status { text-align: center; padding: 1.5rem; color: #888; font-size: 14px; }
-    .error { text-align: center; padding: 1rem; color: #A32D2D; font-size: 14px; }
+<input id="pc" placeholder="1012AB">
+<button onclick="zoek()">Zoek goedkoopste</button>
 
-    @media (max-width: 480px) {
-      .search-row { flex-wrap: wrap; }
-      .stats { grid-template-columns: repeat(3, 1fr); }
-      .price-main { font-size: 18px; }
-    }
-  </style>
-</head>
-<body>
-
-<div class="header">
-  <div>
-    <div class="logo"><span class="logo-dot"></span> TankGoedkoop</div>
-    <div class="tagline">Vergelijk brandstofprijzen bij jou in de buurt</div>
-  </div>
-</div>
-
-<div class="container">
-  <div class="search-box">
-    <div class="search-row">
-      <input type="text" id="search-input" placeholder="Voer postcode in (bijv. 1011 AB)..." />
-      <select id="fuel-select">
-        <option>Euro 95</option>
-        <option>Diesel</option>
-        <option>LPG</option>
-      </select>
-      <button onclick="doSearch()">Zoek</button>
-    </div>
-    <div class="location-hint" id="location-hint">Voer een Nederlandse postcode of stad in</div>
-  </div>
-
-  <div class="filter-row">
-    <button class="filter-btn active" onclick="setFilter(this,'all')">Alle</button>
-    <button class="filter-btn" onclick="setFilter(this,'Shell')">Shell</button>
-    <button class="filter-btn" onclick="setFilter(this,'BP')">BP</button>
-    <button class="filter-btn" onclick="setFilter(this,'Tango')">Tango</button>
-    <button class="filter-btn" onclick="setFilter(this,'Tinq')">Tinq</button>
-    <button class="filter-btn" onclick="setFilter(this,'Esso')">Esso</button>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><div class="stat-val" id="stat-laag">—</div><div class="stat-lbl">Laagste prijs</div></div>
-    <div class="stat"><div class="stat-val" id="stat-gem">—</div><div class="stat-lbl">Gemiddeld</div></div>
-    <div class="stat"><div class="stat-val" id="stat-hoog">—</div><div class="stat-lbl">Hoogste prijs</div></div>
-  </div>
-
-  <div class="results-header">
-    <span id="count"></span>
-    <span id="sort-lbl"></span>
-  </div>
-
-  <div id="status-area"></div>
-  <div class="stations" id="stations-list"></div>
-  <div class="updated" id="updated-time"></div>
-</div>
+<div id="result"></div>
 
 <script>
-const brandColors = {
-  Shell:   { bg: "#FFF8E8", text: "#7A4F00" },
-  BP:      { bg: "#E8F5E9", text: "#1B5E20" },
-  Tango:   { bg: "#E3F2FD", text: "#0D47A1" },
-  Tinq:    { bg: "#EDE7F6", text: "#4527A0" },
-  Esso:    { bg: "#FFEBEE", text: "#B71C1C" },
-  Default: { bg: "#F5F5F5", text: "#424242" }
-};
+async function zoek() {
+  const resultDiv = document.getElementById("result");
+  const pc = document.getElementById("pc").value.trim();
 
-// Basisverschillen per merk t.o.v. landelijk gemiddelde
-const merkOffset = {
-  Tango:   -0.15,
-  Tinq:    -0.10,
-  BP:      -0.03,
-  Shell:    0.04,
-  Esso:     0.08,
-  Default:  0.00
-};
-
-const stationTemplates = [
-  { name: "Tango",        brand: "Tango" },
-  { name: "Tinq",         brand: "Tinq"  },
-  { name: "BP",           brand: "BP"    },
-  { name: "Shell",        brand: "Shell" },
-  { name: "Esso",         brand: "Esso"  },
-  { name: "Shell Express",brand: "Shell" },
-];
-
-let currentFilter = "all";
-let currentStations = [];
-let landelijkePrijzen = null;
-
-// Laad prijzen.json (gegenereerd door de scraper)
-async function laadPrijzen() {
-  try {
-    const res = await fetch("prijzen.json");
-    const data = await res.json();
-    landelijkePrijzen = data.prijzen;
-    document.getElementById("updated-time").textContent =
-      "Landelijke prijzen bijgewerkt op: " + data.bijgewerkt;
-  } catch (e) {
-    // Fallback als json nog niet bestaat
-    landelijkePrijzen = { "Euro 95": 1.949, "Diesel": 1.789, "LPG": 0.899 };
-  }
-}
-
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-function genereerStations(lat, lon, stadsnaam) {
-  const baseE95     = landelijkePrijzen["Euro 95"] || 1.949;
-  const baseDiesel  = landelijkePrijzen["Diesel"]  || 1.789;
-
-  return stationTemplates.map((t, i) => {
-    const angle  = (i / stationTemplates.length) * 2 * Math.PI;
-    const distKm = 0.4 + Math.random() * 4.5;
-    const stLat  = lat + (distKm / 111) * Math.cos(angle);
-    const stLon  = lon + (distKm / (111 * Math.cos(lat * Math.PI / 180))) * Math.sin(angle);
-    const offset = merkOffset[t.brand] ?? 0;
-    const ruis   = (Math.random() - 0.5) * 0.02;
-    return {
-      name:     t.name,
-      brand:    t.brand,
-      address:  stadsnaam + " " + (Math.floor(Math.random() * 200) + 1),
-      distance: haversine(lat, lon, stLat, stLon),
-      e95:      Math.round((baseE95    + offset + ruis) * 1000) / 1000,
-      diesel:   Math.round((baseDiesel + offset + ruis) * 1000) / 1000,
-    };
-  }).sort((a, b) => a.distance - b.distance);
-}
-
-function setFilter(btn, brand) {
-  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  currentFilter = brand;
-  render();
-}
-
-async function doSearch() {
-  const query = document.getElementById("search-input").value.trim();
-  if (!query) return;
-
-  document.getElementById("status-area").innerHTML = '<div class="status">Locatie opzoeken...</div>';
-  document.getElementById("stations-list").innerHTML = "";
-  document.getElementById("count").textContent = "";
-
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ", Nederland")}&format=json&limit=1`;
-    const res  = await fetch(url, { headers: { "Accept-Language": "nl" } });
-    const data = await res.json();
-
-    if (!data || data.length === 0) {
-      document.getElementById("status-area").innerHTML = '<div class="error">Postcode of stad niet gevonden. Probeer opnieuw.</div>';
-      return;
-    }
-
-    const lat      = parseFloat(data[0].lat);
-    const lon      = parseFloat(data[0].lon);
-    const stadsnaam = data[0].display_name.split(",")[0];
-
-    document.getElementById("location-hint").textContent = "Resultaten voor: " + data[0].display_name.split(",").slice(0,2).join(",");
-    document.getElementById("status-area").innerHTML = "";
-
-    currentStations = genereerStations(lat, lon, stadsnaam);
-    render();
-
-  } catch (e) {
-    document.getElementById("status-area").innerHTML = '<div class="error">Er ging iets mis. Controleer je internetverbinding.</div>';
-  }
-}
-
-function render() {
-  const isDiesel = document.getElementById("fuel-select").value === "Diesel";
-  const filtered = currentFilter === "all" ? currentStations : currentStations.filter(s => s.brand === currentFilter);
-  const sorted   = [...filtered].sort((a, b) => (isDiesel ? a.diesel - b.diesel : a.e95 - b.e95));
-
-  if (sorted.length === 0) {
-    document.getElementById("stations-list").innerHTML = '<div class="status">Geen stations gevonden voor dit filter.</div>';
-    document.getElementById("stat-laag").textContent = "—";
-    document.getElementById("stat-gem").textContent  = "—";
-    document.getElementById("stat-hoog").textContent = "—";
+  if (!pc) {
+    resultDiv.innerHTML = "Voer eerst een postcode in";
     return;
   }
 
-  const prices = sorted.map(s => isDiesel ? s.diesel : s.e95);
-  const laag = Math.min(...prices);
-  const hoog = Math.max(...prices);
-  const gem  = prices.reduce((a,b)=>a+b,0) / prices.length;
+  try {
+    // Fetch JSON vanaf root (zelfde folder als index.html)
+    const res = await fetch("./prijzen.json");
+    console.log("Fetch status:", res.status);
 
-  document.getElementById("stat-laag").textContent = "€" + laag.toFixed(3);
-  document.getElementById("stat-gem").textContent  = "€" + gem.toFixed(3);
-  document.getElementById("stat-hoog").textContent = "€" + hoog.toFixed(3);
-  document.getElementById("count").textContent     = sorted.length + " tankstation" + (sorted.length!==1?"s":"") + " gevonden";
-  document.getElementById("sort-lbl").textContent  = "gesorteerd op prijs";
+    if (!res.ok) {
+      resultDiv.innerHTML = "Kon prijzen niet laden";
+      console.error("HTTP fout:", res.status);
+      return;
+    }
 
-  const fuelLabel = document.getElementById("fuel-select").value;
+    const data = await res.json();
+    console.log("GELADEN DATA:", data);
 
-  document.getElementById("stations-list").innerHTML = sorted.map((s, i) => {
-    const c     = brandColors[s.brand] || brandColors.Default;
-    const price = isDiesel ? s.diesel : s.e95;
-    const other = isDiesel ? s.e95    : s.diesel;
-    const otherLabel = isDiesel ? "E95" : "Diesel";
-    return `
-      <div class="card ${i===0?'cheapest':''}">
-        <div class="logo-box" style="background:${c.bg};color:${c.text}">${s.name.slice(0,2).toUpperCase()}</div>
-        <div class="info">
-          <div class="name">${s.name}${i===0?'<span class="badge">Goedkoopst</span>':''}</div>
-          <div class="address">${s.address}</div>
-          <div class="dist">${s.distance.toFixed(1)} km van je locatie</div>
-        </div>
-        <div class="prices">
-          <div class="price-main">€${price.toFixed(3)}</div>
-          <div class="price-lbl">${fuelLabel} per liter</div>
-          <div class="price-other">${otherLabel}: €${other.toFixed(3)}</div>
-        </div>
-      </div>`;
-  }).join("");
+    if (!data.stations || data.stations.length === 0) {
+      resultDiv.innerHTML = "Geen stations gevonden";
+      return;
+    }
+
+    // Eenvoudige filter: voor nu negeren we postcode, gewoon goedkoopste
+    const goedkoopste = data.stations.sort((a,b) => a.prijs - b.prijs)[0];
+
+    resultDiv.innerHTML = `
+      <strong>${goedkoopste.naam}</strong> — €${goedkoopste.prijs.toFixed(2)}<br>
+      Locatie: ${goedkoopste.locatie}
+    `;
+
+  } catch (err) {
+    console.error("Fetch error:", err);
+    resultDiv.innerHTML = "Er is een fout opgetreden bij het laden van de data";
+  }
 }
-
-document.getElementById("fuel-select").addEventListener("change", render);
-document.getElementById("search-input").addEventListener("keydown", e => { if(e.key==="Enter") doSearch(); });
-
-laadPrijzen();
 </script>
-</body>
-</html>
