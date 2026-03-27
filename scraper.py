@@ -2,9 +2,6 @@ import requests
 import json
 from datetime import datetime
  
-# Haalt actuele brandstofprijzen op via de gratis API van brandstofprijzen.nl
-# Dit is een officiële databron, geen scraping — veel betrouwbaarder
- 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36"
 }
@@ -16,87 +13,78 @@ FALLBACK = {
 }
  
 def haal_prijzen_op():
-    # Methode 1: Directe JSON API van brandstofprijzen.nl
+    # Methode 1: CBS OData API — officiële overheidsdata
     try:
-        url = "https://www.brandstofprijzen.info/api/getPrices.php"
+        url = "https://opendata.cbs.nl/ODataApi/odata/80416ned/TypedDataSet?$top=5&$format=json"
+        res = requests.get(url, headers=HEADERS, timeout=15)
+        records = res.json().get("value", [])
+        for r in records:
+            e95 = r.get("Benzine_1") or r.get("Benzine_2")
+            diesel = r.get("Diesel_3") or r.get("Diesel_4") or r.get("Diesel_2")
+            lpg = r.get("LPG_5") or r.get("LPG_4") or r.get("LPG_3")
+            if e95 and diesel:
+                prijzen = {
+                    "Euro 95": round(float(e95) / 100, 3),
+                    "Diesel":  round(float(diesel) / 100, 3),
+                    "LPG":     round(float(lpg) / 100, 3) if lpg else 0.899
+                }
+                if 1.0 < prijzen["Euro 95"] < 3.5:
+                    print(f"CBS API gelukt: {prijzen}")
+                    return prijzen
+    except Exception as e:
+        print(f"CBS API mislukt: {e}")
+ 
+    # Methode 2: Lees alle CBS veldnamen uit om juiste sleutels te vinden
+    try:
+        url = "https://opendata.cbs.nl/ODataApi/odata/80416ned/TypedDataSet?$top=1&$format=json"
+        res = requests.get(url, headers=HEADERS, timeout=15)
+        records = res.json().get("value", [])
+        if records:
+            r = records[0]
+            print(f"CBS velden beschikbaar: {list(r.keys())}")
+            prijzen = {}
+            for key, val in r.items():
+                if val is None:
+                    continue
+                try:
+                    p = float(val) / 100
+                except:
+                    continue
+                k = key.lower()
+                if ("benzine" in k or "euro95" in k or "e10" in k) and 1.0 < p < 3.5:
+                    prijzen["Euro 95"] = round(p, 3)
+                elif "diesel" in k and 1.0 < p < 3.0:
+                    prijzen["Diesel"] = round(p, 3)
+                elif "lpg" in k and 0.5 < p < 2.0:
+                    prijzen["LPG"] = round(p, 3)
+            if prijzen.get("Euro 95") and prijzen.get("Diesel"):
+                print(f"CBS methode 2 gelukt: {prijzen}")
+                return prijzen
+    except Exception as e:
+        print(f"CBS methode 2 mislukt: {e}")
+ 
+    # Methode 3: Tankservice.nl publieke JSON feed
+    try:
+        url = "https://www.tankservice.nl/api/v1/prices"
         res = requests.get(url, headers=HEADERS, timeout=10)
         data = res.json()
         prijzen = {}
-        for item in data:
-            naam = item.get("name", "").lower()
-            prijs = float(item.get("price", 0))
+        items = data if isinstance(data, list) else data.get("prices", data.get("data", []))
+        for item in items:
+            naam = str(item.get("name", item.get("fuel", ""))).lower()
+            prijs = float(item.get("price", item.get("value", 0)))
             if 0.5 < prijs < 5.0:
-                if "euro 95" in naam or "e10" in naam or "95" in naam:
+                if "95" in naam or "euro" in naam:
                     prijzen["Euro 95"] = round(prijs, 3)
                 elif "diesel" in naam:
                     prijzen["Diesel"] = round(prijs, 3)
                 elif "lpg" in naam:
                     prijzen["LPG"] = round(prijs, 3)
         if prijzen.get("Euro 95") and prijzen.get("Diesel"):
-            print(f"Methode 1 gelukt: {prijzen}")
+            print(f"Tankservice gelukt: {prijzen}")
             return prijzen
     except Exception as e:
-        print(f"Methode 1 mislukt: {e}")
- 
-    # Methode 2: CBS Statline open data API (officiële overheidsdata)
-    try:
-        url = "https://opendata.cbs.nl/ODataApi/odata/80416ned/TypedDataSet?$top=10&$orderby=Perioden desc&$format=json"
-        res = requests.get(url, headers=HEADERS, timeout=10)
-        data = res.json()
-        records = data.get("value", [])
-        prijzen = {}
-        for r in records:
-            if r.get("Benzine_1"):
-                prijzen["Euro 95"] = round(float(r["Benzine_1"]) / 100, 3)
-            if r.get("Diesel_2"):
-                prijzen["Diesel"] = round(float(r["Diesel_2"]) / 100, 3)
-            if r.get("LPG_3"):
-                prijzen["LPG"] = round(float(r["LPG_3"]) / 100, 3)
-            if prijzen.get("Euro 95"):
-                break
-        if prijzen.get("Euro 95") and prijzen.get("Diesel"):
-            print(f"Methode 2 gelukt: {prijzen}")
-            return prijzen
-    except Exception as e:
-        print(f"Methode 2 mislukt: {e}")
- 
-    # Methode 3: Scrape anwb.nl die prijzen duidelijk toont
-    try:
-        from bs4 import BeautifulSoup
-        url = "https://www.anwb.nl/auto/brandstof/brandstofprijzen"
-        res = requests.get(url, headers=HEADERS, timeout=10)
-        soup = BeautifulSoup(res.text, "html.parser")
-        prijzen = {}
-        tekst = soup.get_text()
-        regels = tekst.split("\n")
-        for i, regel in enumerate(regels):
-            r = regel.strip()
-            if "euro 95" in r.lower() and i + 1 < len(regels):
-                try:
-                    p = float(regels[i+1].strip().replace(",", ".").replace("€", ""))
-                    if 1.0 < p < 3.5:
-                        prijzen["Euro 95"] = round(p, 3)
-                except:
-                    pass
-            if "diesel" in r.lower() and "euro" not in r.lower() and i + 1 < len(regels):
-                try:
-                    p = float(regels[i+1].strip().replace(",", ".").replace("€", ""))
-                    if 1.0 < p < 3.5:
-                        prijzen["Diesel"] = round(p, 3)
-                except:
-                    pass
-            if "lpg" in r.lower() and i + 1 < len(regels):
-                try:
-                    p = float(regels[i+1].strip().replace(",", ".").replace("€", ""))
-                    if 0.5 < p < 2.5:
-                        prijzen["LPG"] = round(p, 3)
-                except:
-                    pass
-        if prijzen.get("Euro 95") and prijzen.get("Diesel"):
-            print(f"Methode 3 gelukt: {prijzen}")
-            return prijzen
-    except Exception as e:
-        print(f"Methode 3 mislukt: {e}")
+        print(f"Tankservice mislukt: {e}")
  
     print("Alle methodes mislukt, gebruik fallback")
     return FALLBACK
@@ -115,4 +103,4 @@ def sla_op(prijzen):
 if __name__ == "__main__":
     prijzen = haal_prijzen_op()
     sla_op(prijzen)
-
+ 
