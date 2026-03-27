@@ -28,7 +28,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git stash
           git pull --rebase
+          git stash pop || true
           git add prijzen.json
           git diff --staged --quiet || git commit -m "Prijzen bijgewerkt $(date +'%Y-%m-%d')"
           git push
