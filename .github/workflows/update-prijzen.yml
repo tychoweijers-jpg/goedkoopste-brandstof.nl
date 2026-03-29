@@ -2,12 +2,14 @@ name: Brandstofprijzen bijwerken
  
 on:
   schedule:
-    - cron: "0 6 * * *"  # Elke dag om 06:00 's ochtends
-  workflow_dispatch:       # Ook handmatig te starten
+    - cron: "0 6 * * *"
+  workflow_dispatch:
  
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
  
     steps:
       - name: Code ophalen
@@ -28,9 +30,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git stash
-          git pull --rebase
-          git stash pop || true
           git add prijzen.json
           git diff --staged --quiet || git commit -m "Prijzen bijgewerkt $(date +'%Y-%m-%d')"
           git push
