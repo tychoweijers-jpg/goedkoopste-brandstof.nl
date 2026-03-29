@@ -1,28 +1,4 @@
-name: Update fuel prices
-
-on:
-  schedule:
-    - cron: "0 4 * * *"
-  workflow_dispatch:
-
-jobs:
-  run:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - run: pip install requests beautifulsoup4
-
-      - run: python scraper.py
-
-      - run: |
-          git config user.name "bot"
-          git config user.email "bot@github.com"
-          git add stations.json
-          git commit -m "update prices" || echo "no changes"
-          git push
+{
+  "updated": "2026-03-29T08:02:38.292756",
+  "stations": []
+}
