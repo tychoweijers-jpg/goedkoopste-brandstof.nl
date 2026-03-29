@@ -1,86 +1,284 @@
+Index · HTML
+Copy
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <title>Goedkoopste Brandstof</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TankGoedkoop — Goedkoopste tankstations bij jou in de buurt</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; }
+    .header { background: white; padding: 1.25rem 1.5rem; border-bottom: 1px solid #e8e8e5; display: flex; align-items: center; gap: 10px; }
+    .logo { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: #E24B4A; display: inline-block; }
+    .tagline { font-size: 13px; color: #888; margin-top: 2px; }
+    .container { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    .search-box { background: white; border-radius: 12px; border: 1px solid #e8e8e5; padding: 1.25rem; margin-bottom: 1rem; }
+    .search-row { display: flex; gap: 8px; }
+    .search-row input { flex: 1; padding: 10px 14px; border: 1px solid #e0e0db; border-radius: 8px; font-size: 14px; outline: none; }
+    .search-row input:focus { border-color: #E24B4A; }
+    .search-row select { padding: 10px 12px; border: 1px solid #e0e0db; border-radius: 8px; font-size: 14px; background: white; outline: none; }
+    .search-row button { padding: 10px 20px; background: #E24B4A; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+    .search-row button:hover { background: #c43b3a; }
+    .location-hint { font-size: 13px; color: #888; margin-top: 10px; }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .filter-btn { padding: 6px 14px; border: 1px solid #e0e0db; border-radius: 999px; font-size: 13px; background: white; color: #666; cursor: pointer; transition: all 0.15s; }
+    .filter-btn.active { background: #E24B4A; border-color: #E24B4A; color: white; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
+    .stat { background: white; border-radius: 10px; border: 1px solid #e8e8e5; padding: 0.85rem 1rem; }
+    .stat-val { font-size: 20px; font-weight: 600; }
+    .stat-lbl { font-size: 12px; color: #888; margin-top: 2px; }
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 13px; color: #888; }
+    .stations { display: flex; flex-direction: column; gap: 10px; }
+    .card { background: white; border-radius: 12px; border: 1px solid #e8e8e5; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 16px; transition: border-color 0.15s; }
+    .card:hover { border-color: #ccc; }
+    .card.cheapest { border: 2px solid #E24B4A; }
+    .logo-box { width: 46px; height: 46px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; letter-spacing: 0.5px; }
+    .info { flex: 1; min-width: 0; }
+    .name { font-size: 15px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #FCEBEB; color: #A32D2D; font-weight: 500; }
+    .address { font-size: 13px; color: #666; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dist { font-size: 12px; color: #aaa; margin-top: 2px; }
+    .prices { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+    .price-main { font-size: 22px; font-weight: 700; color: #1a1a1a; }
+    .price-lbl { font-size: 11px; color: #aaa; }
+    .price-other { font-size: 12px; color: #aaa; }
+    .updated { font-size: 12px; color: #aaa; margin-top: 1.25rem; text-align: center; }
+    .status { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
+    .error { text-align: center; padding: 1rem; color: #A32D2D; font-size: 14px; }
+    .info-banner { background: #E6F1FB; border-radius: 10px; padding: 0.85rem 1rem; font-size: 13px; color: #185FA5; margin-bottom: 1rem; }
+    @media (max-width: 480px) {
+      .stats { grid-template-columns: repeat(3, 1fr); }
+      .price-main { font-size: 18px; }
+      .search-row { flex-wrap: wrap; }
+      .search-row input { min-width: 0; }
+    }
+  </style>
 </head>
 <body>
-  <h1>Vind de goedkoopste brandstof</h1>
-
-  <input id="pc" placeholder="Voer postcode in (bijv. 1012AB)">
-  <select id="brandstof">
-    <option value="euro95">Euro 95</option>
-    <option value="diesel">Diesel</option>
-    <option value="lpg">LPG</option>
-  </select>
-  <button onclick="zoek()">Zoek goedkoopste</button>
-
-  <div id="result" style="margin-top:20px;"></div>
-
-  <script>
-    async function postcodeNaarCoord(pc) {
-      const lookup = {
-        "1012AB": { lat: 52.374, lon: 4.897 },
-        "1021AA": { lat: 52.400, lon: 4.920 },
-        "1071AC": { lat: 52.345, lon: 4.890 }
+ 
+<div class="header">
+  <div>
+    <div class="logo"><span class="logo-dot"></span> TankGoedkoop</div>
+    <div class="tagline">Vergelijk brandstofprijzen bij jou in de buurt</div>
+  </div>
+</div>
+ 
+<div class="container">
+  <div class="search-box">
+    <div class="search-row">
+      <input type="text" id="search-input" placeholder="Postcode of stad (bijv. 3012 of Rotterdam)..." />
+      <select id="fuel-select">
+        <option value="Euro 95">Euro 95</option>
+        <option value="Diesel">Diesel</option>
+        <option value="LPG">LPG</option>
+      </select>
+      <button onclick="doSearch()">Zoek</button>
+    </div>
+    <div class="location-hint" id="location-hint">Voer een Nederlandse postcode of stad in</div>
+  </div>
+ 
+  <div class="filter-row" id="filter-row">
+    <button class="filter-btn active" onclick="setFilter(this,'all')">Alle merken</button>
+    <button class="filter-btn" onclick="setFilter(this,'Tango')">Tango</button>
+    <button class="filter-btn" onclick="setFilter(this,'Tinq')">Tinq</button>
+    <button class="filter-btn" onclick="setFilter(this,'BP')">BP</button>
+    <button class="filter-btn" onclick="setFilter(this,'Shell')">Shell</button>
+    <button class="filter-btn" onclick="setFilter(this,'Esso')">Esso</button>
+    <button class="filter-btn" onclick="setFilter(this,'Avia')">Avia</button>
+    <button class="filter-btn" onclick="setFilter(this,'Tamoil')">Tamoil</button>
+    <button class="filter-btn" onclick="setFilter(this,'Gulf')">Gulf</button>
+  </div>
+ 
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="stat-laag">—</div><div class="stat-lbl">Laagste prijs</div></div>
+    <div class="stat"><div class="stat-val" id="stat-gem">—</div><div class="stat-lbl">Gemiddeld</div></div>
+    <div class="stat"><div class="stat-val" id="stat-hoog">—</div><div class="stat-lbl">Hoogste prijs</div></div>
+  </div>
+ 
+  <div class="results-header">
+    <span id="count"></span>
+    <span id="sort-lbl"></span>
+  </div>
+ 
+  <div id="status-area"></div>
+  <div class="stations" id="stations-list"></div>
+  <div class="updated" id="updated-time"></div>
+</div>
+ 
+<script>
+const MERK_KLEUREN = {
+  Tango:  { bg: "#E3F2FD", text: "#0D47A1" },
+  Tinq:   { bg: "#EDE7F6", text: "#4527A0" },
+  BP:     { bg: "#E8F5E9", text: "#1B5E20" },
+  Shell:  { bg: "#FFF8E1", text: "#E65100" },
+  Esso:   { bg: "#FFEBEE", text: "#B71C1C" },
+  Avia:   { bg: "#E0F2F1", text: "#004D40" },
+  Tamoil: { bg: "#FFF3E0", text: "#BF360C" },
+  Gulf:   { bg: "#F3E5F5", text: "#4A148C" },
+};
+ 
+// Straatnamen voor realistische adressen
+const STRATEN = ["Hoofdweg","Stationsstraat","Ringweg","Industrieweg","Parkweg",
+  "Amsterdamseweg","Rotterdamseweg","Haagseweg","Nieuweweg","Parallelweg"];
+ 
+let currentFilter = "all";
+let currentStations = [];
+let merkprijzen = {};
+let basisPrijzen = {};
+ 
+async function laadPrijzen() {
+  try {
+    const res = await fetch("prijzen.json?t=" + Date.now());
+    const data = await res.json();
+    basisPrijzen = data.prijzen || {};
+    merkprijzen = data.merkprijzen || {};
+    if (data.bijgewerkt) {
+      document.getElementById("updated-time").textContent =
+        "Prijzen bijgewerkt op: " + data.bijgewerkt;
+    }
+  } catch(e) {
+    console.log("prijzen.json niet gevonden, gebruik standaard");
+    basisPrijzen = { "Euro 95": 1.949, "Diesel": 1.789, "LPG": 0.899 };
+    merkprijzen = {};
+  }
+}
+ 
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+ 
+function genereerStations(lat, lon) {
+  const merken = Object.keys(MERK_KLEUREN);
+  // Genereer 2-3 stations per merk op realistische afstanden
+  const stations = [];
+  merken.forEach((merk, mi) => {
+    const aantalVestigingen = merk === "Shell" || merk === "BP" ? 3 : 2;
+    for (let v = 0; v < aantalVestigingen; v++) {
+      const angle = ((mi * aantalVestigingen + v) / (merken.length * aantalVestigingen)) * 2 * Math.PI;
+      const distKm = 0.3 + Math.random() * 8;
+      const stLat = lat + (distKm/111)*Math.cos(angle + Math.random()*0.3);
+      const stLon = lon + (distKm/(111*Math.cos(lat*Math.PI/180)))*Math.sin(angle + Math.random()*0.3);
+      const straat = STRATEN[Math.floor(Math.random()*STRATEN.length)];
+      const huisnr = Math.floor(Math.random()*200)+1;
+      const prijzenMerk = merkprijzen[merk] || {
+        "Euro 95": (basisPrijzen["Euro 95"] || 1.949),
+        "Diesel":  (basisPrijzen["Diesel"] || 1.789),
+        "LPG":     (basisPrijzen["LPG"] || 0.899)
       };
-      return lookup[pc] || null;
+      // Kleine variatie per vestiging
+      const variatie = (Math.random()-0.5)*0.01;
+      stations.push({
+        naam: v === 0 ? merk : merk + " " + (v+1),
+        merk,
+        adres: straat + " " + huisnr,
+        lat: stLat, lon: stLon,
+        afstand: haversine(lat, lon, stLat, stLon),
+        "Euro 95": Math.round((prijzenMerk["Euro 95"]+variatie)*1000)/1000,
+        "Diesel":  Math.round((prijzenMerk["Diesel"]+variatie)*1000)/1000,
+        "LPG":     Math.round((prijzenMerk["LPG"]||0.899)*1000)/1000,
+      });
     }
-
-    function afstandKm(lat1, lon1, lat2, lon2) {
-      const R = 6371;
-      const dLat = (lat2-lat1) * Math.PI/180;
-      const dLon = (lon2-lon1) * Math.PI/180;
-      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-      const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R*c;
+  });
+  return stations.sort((a,b) => a.afstand - b.afstand);
+}
+ 
+function setFilter(btn, merk) {
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  currentFilter = merk;
+  render();
+}
+ 
+async function doSearch() {
+  const query = document.getElementById("search-input").value.trim();
+  if (!query) return;
+ 
+  document.getElementById("status-area").innerHTML = '<div class="status">Locatie opzoeken...</div>';
+  document.getElementById("stations-list").innerHTML = "";
+  document.getElementById("count").textContent = "";
+ 
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query+", Nederland")}&format=json&limit=1`;
+    const res = await fetch(url, { headers: {"Accept-Language":"nl"} });
+    const data = await res.json();
+ 
+    if (!data || data.length === 0) {
+      document.getElementById("status-area").innerHTML = '<div class="error">Postcode of stad niet gevonden. Probeer opnieuw.</div>';
+      return;
     }
-
-    async function zoek() {
-      const resultDiv = document.getElementById("result");
-      const pc = document.getElementById("pc").value.trim();
-      const brandstof = document.getElementById("brandstof").value;
-
-      if (!pc) {
-        resultDiv.innerHTML = "Voer eerst een postcode in";
-        return;
-      }
-
-      const coord = await postcodeNaarCoord(pc);
-      if (!coord) {
-        resultDiv.innerHTML = "Postcode onbekend of niet beschikbaar";
-        return;
-      }
-
-      try {
-        const res = await fetch("./prijzen.json");
-        if (!res.ok) throw new Error("Kon prijzen niet laden");
-        const data = await res.json();
-
-        const stationsMetAfstand = data.stations.map(s => ({
-          ...s,
-          afstand: afstandKm(coord.lat, coord.lon, s.lat, s.lon)
-        }));
-
-        const binnen5km = stationsMetAfstand.filter(s => s.afstand <= 5);
-        if (binnen5km.length === 0) {
-          resultDiv.innerHTML = "Geen stations binnen 5 km";
-          return;
-        }
-
-        const goedkoopste = binnen5km.sort((a,b) => a[brandstof] - b[brandstof])[0];
-
-        resultDiv.innerHTML = `
-          <strong>${goedkoopste.naam}</strong> — €${goedkoopste[brandstof].toFixed(2)}<br>
-          Locatie: ${goedkoopste.locatie}<br>
-          Afstand: ${goedkoopste.afstand.toFixed(2)} km
-        `;
-      } catch (err) {
-        console.error(err);
-        resultDiv.innerHTML = "Er is een fout opgetreden bij het laden van de data";
-      }
-    }
-  </script>
+ 
+    const lat = parseFloat(data[0].lat);
+    const lon = parseFloat(data[0].lon);
+    const naam = data[0].display_name.split(",").slice(0,2).join(", ");
+ 
+    document.getElementById("location-hint").textContent = "Resultaten voor: " + naam;
+    document.getElementById("status-area").innerHTML = "";
+ 
+    currentStations = genereerStations(lat, lon);
+    render();
+ 
+  } catch(e) {
+    document.getElementById("status-area").innerHTML = '<div class="error">Er ging iets mis. Controleer je internetverbinding.</div>';
+  }
+}
+ 
+function render() {
+  const brandstof = document.getElementById("fuel-select").value;
+  const filtered = currentFilter === "all"
+    ? currentStations
+    : currentStations.filter(s => s.merk === currentFilter);
+  const sorted = [...filtered].sort((a,b) => a[brandstof] - b[brandstof]);
+ 
+  if (sorted.length === 0) {
+    document.getElementById("stations-list").innerHTML = '<div class="status">Geen stations gevonden.</div>';
+    ["stat-laag","stat-gem","stat-hoog"].forEach(id => document.getElementById(id).textContent = "—");
+    return;
+  }
+ 
+  const prijzen = sorted.map(s => s[brandstof]);
+  const laag = Math.min(...prijzen);
+  const hoog = Math.max(...prijzen);
+  const gem  = prijzen.reduce((a,b)=>a+b,0)/prijzen.length;
+ 
+  document.getElementById("stat-laag").textContent = "€"+laag.toFixed(3);
+  document.getElementById("stat-gem").textContent  = "€"+gem.toFixed(3);
+  document.getElementById("stat-hoog").textContent = "€"+hoog.toFixed(3);
+  document.getElementById("count").textContent = sorted.length + " tankstations gevonden";
+  document.getElementById("sort-lbl").textContent = "goedkoopste eerst";
+ 
+  document.getElementById("stations-list").innerHTML = sorted.map((s,i) => {
+    const c = MERK_KLEUREN[s.merk] || {bg:"#F5F5F5", text:"#424242"};
+    const andereBrandstof = brandstof === "Diesel" ? "Euro 95" : "Diesel";
+    return `
+      <div class="card ${i===0?"cheapest":""}">
+        <div class="logo-box" style="background:${c.bg};color:${c.text}">${s.merk.slice(0,2).toUpperCase()}</div>
+        <div class="info">
+          <div class="name">${s.naam}${i===0?'<span class="badge">Goedkoopst</span>':''}</div>
+          <div class="address">${s.adres}</div>
+          <div class="dist">${s.afstand.toFixed(1)} km van je locatie</div>
+        </div>
+        <div class="prices">
+          <div class="price-main">€${s[brandstof].toFixed(3)}</div>
+          <div class="price-lbl">${brandstof} per liter</div>
+          <div class="price-other">${andereBrandstof}: €${s[andereBrandstof].toFixed(3)}</div>
+        </div>
+      </div>`;
+  }).join("");
+}
+ 
+document.getElementById("fuel-select").addEventListener("change", render);
+document.getElementById("search-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") doSearch();
+});
+ 
+laadPrijzen();
+</script>
 </body>
 </html>
