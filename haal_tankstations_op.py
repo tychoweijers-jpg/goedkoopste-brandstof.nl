@@ -26,8 +26,35 @@ node["amenity"="fuel"](area.nl);
 out body;
 """
  
-res = requests.post("https://overpass-api.de/api/interpreter", data={"data": query}, timeout=90)
-elements = res.json().get("elements", [])
+# Probeer twee verschillende Overpass servers
+SERVERS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+]
+ 
+data = None
+for server in SERVERS:
+    try:
+        print("Probeer server: " + server)
+        res = requests.post(server, data={"data": query}, timeout=90)
+        if res.status_code == 200 and res.text.strip().startswith("{"):
+            data = res.json()
+            print("Gelukt!")
+            break
+        else:
+            print("Server gaf fout: " + str(res.status_code))
+    except Exception as e:
+        print("Server mislukt: " + str(e))
+ 
+if not data:
+    print("Alle servers mislukt. Tankstations worden later opgehaald.")
+    # Maak leeg bestand aan zodat de workflow niet crasht
+    if not os.path.exists(BESTAND):
+        with open(BESTAND, "w") as f:
+            json.dump([], f)
+    exit()
+ 
+elements = data.get("elements", [])
 print(str(len(elements)) + " tankstations gevonden")
  
 stations = []
