@@ -1,81 +1,110 @@
 import requests
+from bs4 import BeautifulSoup
 import json
+import re
 from datetime import datetime
  
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36",
-    "Accept": "application/json",
-    "Referer": "https://www.anwb.nl/",
+    "Accept": "text/html,application/xhtml+xml",
+    "Accept-Language": "nl-NL,nl;q=0.9",
 }
  
-FALLBACK = {"Euro 95": 2.059, "Diesel": 1.879, "LPG": 0.899}
+# Actuele GLA prijzen 29 maart 2026 (bron: unitedconsumers.com)
+FALLBACK = {"Euro 95": 2.180, "Diesel": 2.040, "LPG": 0.979}
  
-def scrape_anwb_api():
-    """ANWB heeft een publieke API voor brandstofprijzen per tankstation"""
-    try:
-        url = "https://www.anwb.nl/api/tankstations?lat=52.3676&lon=4.9041&radius=50&limit=100"
-        res = requests.get(url, headers=HEADERS, timeout=20)
-        print("ANWB API status: " + str(res.status_code))
-        if res.status_code == 200:
-            data = res.json()
-            print("ANWB API response keys: " + str(list(data.keys()) if isinstance(data, dict) else type(data)))
-            return data
-    except Exception as e:
-        print("ANWB API mislukt: " + str(e))
+def vind_prijs(tekst, min_p=1.5, max_p=3.0):
+    matches = re.findall(r'\b([12])[\.,](\d{3})\b', tekst)
+    for m in matches:
+        p = round(float(m[0] + "." + m[1]), 3)
+        if min_p < p < max_p:
+            return p
     return None
  
-def scrape_unitedconsumers_api():
-    """UnitedConsumers heeft een JSON endpoint"""
+def scrape_unitedconsumers():
+    """Scrape de GLA prijzen van UnitedConsumers"""
     try:
-        url = "https://www.unitedconsumers.com/api/fuel-prices"
+        url = "https://www.unitedconsumers.com/tanken/brandstofprijzen"
         res = requests.get(url, headers=HEADERS, timeout=20)
-        print("UC API status: " + str(res.status_code))
-        if res.status_code == 200:
-            return res.json()
+        print("UC status: " + str(res.status_code))
+        soup = BeautifulSoup(res.text, "html.parser")
+ 
+        # Zoek alle prijzen in de pagina
+        tekst = soup.get_text(" ", strip=True)
+        print("UC tekst fragment: " + tekst[:500])
+ 
+        e95 = diesel = lpg = None
+ 
+        # Zoek per regel
+        for regel in tekst.replace("  ", "\n").split("\n"):
+            r = regel.lower().strip()
+            if len(r) < 3:
+                continue
+            if ("euro 95" in r or "e10" in r or "benzine" in r) and not e95:
+                p = vind_prijs(regel)
+                if p:
+                    e95 = p
+                    print("UC E95 gevonden: " + str(p) + " in: " + regel[:50])
+            if "diesel" in r and "premium" not in r and "bio" not in r and not diesel:
+                p = vind_prijs(regel)
+                if p:
+                    diesel = p
+                    print("UC Diesel gevonden: " + str(p) + " in: " + regel[:50])
+            if "lpg" in r and not lpg:
+                p = vind_prijs(regel, 0.5, 1.5)
+                if p:
+                    lpg = p
+ 
+        if e95 and diesel:
+            print("UC gelukt: E95=" + str(e95) + " Diesel=" + str(diesel))
+            return {"Euro 95": e95, "Diesel": diesel, "LPG": lpg or 0.979}
+        print("UC mislukt: E95=" + str(e95) + " Diesel=" + str(diesel))
     except Exception as e:
-        print("UC API mislukt: " + str(e))
+        print("UC fout: " + str(e))
     return None
  
-def scrape_fulltank():
-    """Fulltank.nl publiceert dagelijkse adviesprijzen"""
+def scrape_tango():
+    """Scrape Tango prijzen en bereken basis daaruit"""
     try:
-        url = "https://fulltank.nl/api/prices/"
+        url = "https://www.tango.nl/tanken/brandstofprijzen/"
         res = requests.get(url, headers=HEADERS, timeout=20)
-        print("Fulltank status: " + str(res.status_code))
-        if res.status_code == 200:
-            data = res.json()
-            print("Fulltank data: " + str(data)[:200])
-            return data
-    except Exception as e:
-        print("Fulltank mislukt: " + str(e))
-    return None
+        print("Tango status: " + str(res.status_code))
+        tekst = res.text
  
-def scrape_tankservice():
-    """Tankservice API die door DirectLease wordt gebruikt"""
-    try:
-        url = "https://tankservice.app-it-up.com/api/v1/stations?lat=52.3676&lon=4.9041&radius=20"
-        res = requests.get(url, headers=HEADERS, timeout=20)
-        print("Tankservice status: " + str(res.status_code))
-        if res.status_code == 200:
-            data = res.json()
-            print("Tankservice: " + str(data)[:200])
-            return data
+        # Vind alle prijzen
+        alle = re.findall(r'\b([12])[\.,](\d{3})\b', tekst)
+        uniek = []
+        for m in alle:
+            p = round(float(m[0] + "." + m[1]), 3)
+            if 1.5 < p < 2.8 and p not in uniek:
+                uniek.append(p)
+        uniek.sort()
+        print("Tango prijzen gevonden: " + str(uniek))
+ 
+        if len(uniek) >= 2:
+            # Tango is goedkoopste merk, voeg offset toe voor basis
+            diesel_tango = uniek[0]
+            e95_tango = uniek[1] if len(uniek) > 1 else uniek[0] + 0.14
+            # Bereken basisprijs (Tango is gemiddeld 14ct goedkoper voor E95, 12ct voor diesel)
+            e95_basis = round(e95_tango + 0.14, 3)
+            diesel_basis = round(diesel_tango + 0.12, 3)
+            if 1.8 < e95_basis < 2.8 and 1.7 < diesel_basis < 2.8:
+                print("Tango gelukt: E95 basis=" + str(e95_basis) + " Diesel basis=" + str(diesel_basis))
+                return {"Euro 95": e95_basis, "Diesel": diesel_basis, "LPG": 0.979}
     except Exception as e:
-        print("Tankservice mislukt: " + str(e))
+        print("Tango fout: " + str(e))
     return None
  
 def haal_prijzen_op():
-    # Probeer alle API's en log wat ze teruggeven
-    for fn in [scrape_anwb_api, scrape_unitedconsumers_api, scrape_fulltank, scrape_tankservice]:
-        result = fn()
-        if result:
-            print("Resultaat gevonden via: " + fn.__name__)
+    basis = None
+    for fn in [scrape_unitedconsumers, scrape_tango]:
+        basis = fn()
+        if basis:
             break
  
-    # Gebruik actuele prijzen van vandaag als fallback
-    # (gebaseerd op gemiddelde landelijke adviesprijs 29 maart 2026)
-    print("Gebruik actuele handmatige prijzen van 29 maart 2026")
-    basis = {"Euro 95": 2.059, "Diesel": 1.879, "LPG": 0.894}
+    if not basis:
+        print("Scraping mislukt, gebruik actuele GLA van 29 maart 2026")
+        basis = FALLBACK
  
     offsets = {
         "Tango":    {"Euro 95": -0.14, "Diesel": -0.12},
@@ -100,7 +129,7 @@ def haal_prijzen_op():
         merkprijzen[merk] = {
             "Euro 95": round(basis["Euro 95"] + off["Euro 95"], 3),
             "Diesel":  round(basis["Diesel"] + off["Diesel"], 3),
-            "LPG":     basis.get("LPG", 0.894)
+            "LPG":     basis.get("LPG", 0.979)
         }
  
     return {"basis": basis, "merken": merkprijzen}
