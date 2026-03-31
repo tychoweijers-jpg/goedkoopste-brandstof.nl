@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TankGoedkoop — Goedkoopste tankstations bij jou in de buurt</title>
+  <title>TankGoedkoop — Actuele brandstofprijzen per tankstation</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; }
@@ -19,9 +19,11 @@
     .search-row select { padding: 10px 12px; border: 1px solid #e0e0db; border-radius: 8px; font-size: 14px; background: white; outline: none; }
     .search-row button { padding: 10px 20px; background: #E24B4A; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
     .search-row button:hover { background: #c43b3a; }
-    .location-hint { font-size: 13px; color: #888; margin-top: 10px; }
+    .locatie-btn { margin-top: 8px; background: none; border: 1px solid #e0e0db; border-radius: 8px; padding: 8px 14px; font-size: 13px; color: #666; cursor: pointer; width: 100%; }
+    .locatie-btn:hover { background: #f5f5f3; }
     .radius-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; color: #666; }
     .radius-row input[type=range] { flex: 1; }
+    .location-hint { font-size: 13px; color: #888; margin-top: 8px; }
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
     .stat { background: white; border-radius: 10px; border: 1px solid #e8e8e5; padding: 0.85rem 1rem; }
     .stat-val { font-size: 20px; font-weight: 600; }
@@ -40,51 +42,83 @@
     .prices { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
     .price-main { font-size: 22px; font-weight: 700; }
     .price-lbl { font-size: 11px; color: #aaa; }
+    .price-other { font-size: 12px; color: #aaa; }
     .updated { font-size: 12px; color: #aaa; margin-top: 1.25rem; text-align: center; }
     .status { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
-    .error { text-align: center; padding: 1rem; color: #A32D2D; font-size: 14px; }
-    .locatie-btn { margin-top: 8px; background: none; border: 1px solid #e0e0db; border-radius: 8px; padding: 8px 14px; font-size: 13px; color: #666; cursor: pointer; width: 100%; }
-    .locatie-btn:hover { background: #f5f5f3; }
+    .error { text-align: center; padding: 1rem; color: #A32D2D; font-size: 14px; background: #FFEBEE; border-radius: 8px; }
   </style>
 </head>
 <body>
-
+ 
 <div class="header">
   <div class="logo"><span class="logo-dot"></span> TankGoedkoop</div>
-  <div class="tagline">Actuele brandstofprijzen bij jou in de buurt</div>
+  <div class="tagline">Actuele brandstofprijzen per tankstation — via ANWB</div>
 </div>
-
+ 
 <div class="container">
   <div class="search-box">
     <div class="search-row">
-      <input type="text" id="search-input" placeholder="Postcode of stad..." />
+      <input type="text" id="search-input" placeholder="Postcode of stad (bijv. 1011 of Amsterdam)..." />
       <select id="fuel-select">
-        <option value="Euro95">Euro 95</option>
-        <option value="Diesel">Diesel</option>
-        <option value="LPG">LPG</option>
+        <option value="EURO95">Euro 95</option>
+        <option value="DIESEL">Diesel</option>
+        <option value="AUTOGAS">LPG</option>
+        <option value="EURO98">Euro 98</option>
       </select>
       <button onclick="doSearch()">Zoek</button>
     </div>
     <button class="locatie-btn" onclick="gebruikLocatie()">📍 Gebruik mijn huidige locatie</button>
     <div class="radius-row">
-      Straal: <input type="range" id="radius" min="1" max="25" value="5" />
+      Straal: <input type="range" id="radius" min="1" max="30" value="5" step="1"
+        oninput="document.getElementById('radius-val').textContent=this.value" />
       <span id="radius-val">5</span> km
     </div>
-    <div class="location-hint" id="location-hint"></div>
+    <div class="location-hint" id="location-hint">Voer een postcode in of gebruik je huidige locatie</div>
   </div>
-
+ 
   <div class="stats">
-    <div class="stat"><div class="stat-val" id="stat-laag">—</div><div class="stat-lbl">Laagste</div></div>
+    <div class="stat"><div class="stat-val" id="stat-laag">—</div><div class="stat-lbl">Laagste prijs</div></div>
     <div class="stat"><div class="stat-val" id="stat-gem">—</div><div class="stat-lbl">Gemiddeld</div></div>
-    <div class="stat"><div class="stat-val" id="stat-hoog">—</div><div class="stat-lbl">Hoogste</div></div>
+    <div class="stat"><div class="stat-val" id="stat-hoog">—</div><div class="stat-lbl">Hoogste prijs</div></div>
   </div>
-
-  <div id="status-area"></div>
-  <div id="stations-list"></div>
-  <div id="updated-time" class="updated"></div>
+ 
+  <div class="results-header">
+    <span id="count"></span>
+    <span id="sort-lbl"></span>
+  </div>
+ 
+  <div id="status-area"><div class="status">Voer een postcode in om te beginnen</div></div>
+  <div class="stations" id="stations-list"></div>
+  <div class="updated" id="updated-time"></div>
 </div>
-
+ 
 <script>
+const MERK_KLEUREN = {
+  shell:   { bg: "#FFF8E1", text: "#E65100" },
+  bp:      { bg: "#E8F5E9", text: "#1B5E20" },
+  esso:    { bg: "#FFEBEE", text: "#B71C1C" },
+  tango:   { bg: "#E3F2FD", text: "#0D47A1" },
+  tinq:    { bg: "#EDE7F6", text: "#4527A0" },
+  tamoil:  { bg: "#FFF3E0", text: "#BF360C" },
+  gulf:    { bg: "#F3E5F5", text: "#4A148C" },
+  avia:    { bg: "#E0F2F1", text: "#004D40" },
+  texaco:  { bg: "#FFECB3", text: "#E65100" },
+  total:   { bg: "#E8EAF6", text: "#283593" },
+  q8:      { bg: "#FCE4EC", text: "#880E4F" },
+  argos:   { bg: "#FBE9E7", text: "#BF360C" },
+  ok:      { bg: "#F1F8E9", text: "#33691E" },
+  calpam:  { bg: "#E0F7FA", text: "#006064" },
+};
+ 
+function getMerkKleur(naam) {
+  if (!naam) return { bg: "#F5F5F5", text: "#424242" };
+  const n = naam.toLowerCase();
+  for (const [key, val] of Object.entries(MERK_KLEUREN)) {
+    if (n.includes(key)) return val;
+  }
+  return { bg: "#F5F5F5", text: "#424242" };
+}
+ 
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2-lat1)*Math.PI/180;
@@ -92,55 +126,157 @@ function haversine(lat1, lon1, lat2, lon2) {
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
-
-async function haalANWBStations(lat, lon, straal) {
-  const url = `https://JOUW-RAILWAY-URL/api/tankstations?lat=${lat}&lon=${lon}&straal=${straal}&fuel=${document.getElementById("fuel-select").value}`;
-  const res = await fetch(url);
-  return await res.json();
-}
-
-async function zoekMetCoordinaten(lat, lon) {
-  document.getElementById("status-area").innerHTML = "Laden...";
-  const data = await haalANWBStations(lat, lon, 5);
-
-  const stations = data.locations
-    .map(s => ({
-      ...s,
-      afstand: haversine(lat, lon, s.latitude, s.longitude),
-      prijs: parseFloat(s.price)
-    }))
-    .filter(s => s.prijs)
-    .sort((a,b)=>a.prijs-b.prijs)
-    .slice(0,20);
-
-  document.getElementById("stations-list").innerHTML = stations.map((s,i)=>`
-    <div class="card ${i===0?"cheapest":""}">
-      <div class="info">
-        <div class="name">${s.name}</div>
-        <div class="address">${s.street || ""}</div>
-        <div class="dist">${s.afstand.toFixed(1)} km</div>
-      </div>
-      <div class="prices">
-        <div class="price-main">€${s.prijs.toFixed(3)}</div>
-      </div>
-    </div>
-  `).join("");
-
-  const prijzen = stations.map(s=>s.prijs);
-  document.getElementById("stat-laag").textContent = "€"+Math.min(...prijzen).toFixed(3);
-  document.getElementById("stat-gem").textContent = "€"+(prijzen.reduce((a,b)=>a+b)/prijzen.length).toFixed(3);
-  document.getElementById("stat-hoog").textContent = "€"+Math.max(...prijzen).toFixed(3);
-}
-
-async function doSearch() {
-  const q = document.getElementById("search-input").value;
-  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
-  const data = await res.json();
-  if(data[0]) {
-    zoekMetCoordinaten(parseFloat(data[0].lat), parseFloat(data[0].lon));
+ 
+let huidigeLat = null;
+let huidigeLon = null;
+ 
+async function haalStations(lat, lon, straal) {
+  const graden = straal / 111;
+  const lonGraden = straal / (111 * Math.cos(lat * Math.PI / 180));
+  const lat1 = (lat - graden).toFixed(5);
+  const lat2 = (lat + graden).toFixed(5);
+  const lon1 = (lon - lonGraden).toFixed(5);
+  const lon2 = (lon + lonGraden).toFixed(5);
+  const brandstof = document.getElementById("fuel-select").value;
+ 
+  const url = `https://api.anwb.nl/routing/points-of-interest/v3/all?type-filter=FUEL_STATION&bounding-box-filter=${lat1},${lon1},${lat2},${lon2}&fuel-types-filter=${brandstof}`;
+ 
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Status " + res.status);
+    const data = await res.json();
+    return data.value || [];
+  } catch(e) {
+    console.log("ANWB API fout: " + e);
+    return null;
   }
 }
+ 
+function toonStations(stations, lat, lon) {
+  const brandstof = document.getElementById("fuel-select").value;
+  const straal = parseInt(document.getElementById("radius").value);
+  const fuelLabel = {
+    EURO95: "Euro 95", DIESEL: "Diesel", AUTOGAS: "LPG", EURO98: "Euro 98"
+  }[brandstof] || brandstof;
+ 
+  // Voeg afstand en prijs toe
+  const verwerkt = stations.map(s => {
+    const afstand = haversine(lat, lon, s.coordinates.latitude, s.coordinates.longitude);
+    const prijsObj = (s.prices || []).find(p => p.fuelType === brandstof);
+    const prijs = prijsObj && prijsObj.value > 0 ? prijsObj.value : null;
+    return { ...s, afstand, prijs };
+  })
+  .filter(s => s.prijs && s.afstand <= straal)
+  .sort((a, b) => a.prijs - b.prijs)
+  .slice(0, 50);
+ 
+  if (verwerkt.length === 0) {
+    document.getElementById("status-area").innerHTML = '<div class="error">Geen tankstations gevonden binnen ' + straal + ' km met bekende prijs. Vergroot de straal.</div>';
+    ["stat-laag","stat-gem","stat-hoog"].forEach(id => document.getElementById(id).textContent = "—");
+    document.getElementById("count").textContent = "";
+    return;
+  }
+ 
+  document.getElementById("status-area").innerHTML = "";
+ 
+  const prijzen = verwerkt.map(s => s.prijs);
+  document.getElementById("stat-laag").textContent = "€" + Math.min(...prijzen).toFixed(3);
+  document.getElementById("stat-gem").textContent  = "€" + (prijzen.reduce((a,b)=>a+b,0)/prijzen.length).toFixed(3);
+  document.getElementById("stat-hoog").textContent = "€" + Math.max(...prijzen).toFixed(3);
+  document.getElementById("count").textContent = verwerkt.length + " tankstations gevonden";
+  document.getElementById("sort-lbl").textContent = "goedkoopste eerst";
+  document.getElementById("updated-time").textContent = "Actuele prijzen via ANWB · bijgewerkt om " + new Date().toLocaleTimeString("nl-NL", {hour:"2-digit", minute:"2-digit"});
+ 
+  document.getElementById("stations-list").innerHTML = verwerkt.map((s, i) => {
+    const naam = s.title || "Tankstation";
+    const c = getMerkKleur(naam);
+    const adres = s.address ? (s.address.streetAddress || "") : "";
+    const stad  = s.address ? (s.address.city || "") : "";
+ 
+    // Tweede brandstof prijs
+    const dieselObj = (s.prices || []).find(p => p.fuelType === "DIESEL");
+    const e95Obj    = (s.prices || []).find(p => p.fuelType === "EURO95");
+    let anderePrijs = null;
+    let andereLabel = null;
+    if (brandstof === "EURO95" && dieselObj && dieselObj.value > 0) {
+      anderePrijs = dieselObj.value;
+      andereLabel = "Diesel";
+    } else if (brandstof === "DIESEL" && e95Obj && e95Obj.value > 0) {
+      anderePrijs = e95Obj.value;
+      andereLabel = "Euro 95";
+    }
+ 
+    return `
+      <div class="card ${i===0?"cheapest":""}">
+        <div class="logo-box" style="background:${c.bg};color:${c.text}">${naam.slice(0,2).toUpperCase()}</div>
+        <div class="info">
+          <div class="name">${naam}${i===0?'<span class="badge">Goedkoopst</span>':''}</div>
+          <div class="address">${adres}${stad ? " · " + stad : ""}</div>
+          <div class="dist">${s.afstand.toFixed(1)} km van je locatie</div>
+        </div>
+        <div class="prices">
+          <div class="price-main">€${s.prijs.toFixed(3)}</div>
+          <div class="price-lbl">${fuelLabel} per liter</div>
+          ${anderePrijs ? `<div class="price-other">${andereLabel}: €${anderePrijs.toFixed(3)}</div>` : ""}
+        </div>
+      </div>`;
+  }).join("");
+}
+ 
+async function zoekMetCoordinaten(lat, lon) {
+  huidigeLat = lat;
+  huidigeLon = lon;
+  const straal = parseInt(document.getElementById("radius").value);
+  document.getElementById("status-area").innerHTML = '<div class="status">Prijzen ophalen via ANWB...</div>';
+  document.getElementById("stations-list").innerHTML = "";
+  document.getElementById("count").textContent = "";
+ 
+  const stations = await haalStations(lat, lon, straal);
+  if (stations === null) {
+    document.getElementById("status-area").innerHTML = '<div class="error">Kon de ANWB API niet bereiken. Probeer het later opnieuw.</div>';
+    return;
+  }
+  toonStations(stations, lat, lon);
+}
+ 
+async function doSearch() {
+  const query = document.getElementById("search-input").value.trim();
+  if (!query) return;
+  document.getElementById("status-area").innerHTML = '<div class="status">Locatie opzoeken...</div>';
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ", Nederland")}&format=json&limit=1`;
+    const res = await fetch(url, { headers: { "Accept-Language": "nl" } });
+    const data = await res.json();
+    if (!data || data.length === 0) {
+      document.getElementById("status-area").innerHTML = '<div class="error">Postcode of stad niet gevonden.</div>';
+      return;
+    }
+    const lat = parseFloat(data[0].lat);
+    const lon = parseFloat(data[0].lon);
+    document.getElementById("location-hint").textContent = "Resultaten voor: " + data[0].display_name.split(",").slice(0,2).join(", ");
+    await zoekMetCoordinaten(lat, lon);
+  } catch(e) {
+    document.getElementById("status-area").innerHTML = '<div class="error">Er ging iets mis. Controleer je internetverbinding.</div>';
+  }
+}
+ 
+function gebruikLocatie() {
+  if (!navigator.geolocation) { alert("Locatie niet beschikbaar."); return; }
+  document.getElementById("status-area").innerHTML = '<div class="status">Locatie bepalen...</div>';
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      document.getElementById("location-hint").textContent = "Resultaten voor je huidige locatie";
+      await zoekMetCoordinaten(pos.coords.latitude, pos.coords.longitude);
+    },
+    () => {
+      document.getElementById("status-area").innerHTML = '<div class="error">Locatie niet toegestaan. Voer een postcode in.</div>';
+    }
+  );
+}
+ 
+document.getElementById("fuel-select").addEventListener("change", () => { if (huidigeLat) zoekMetCoordinaten(huidigeLat, huidigeLon); });
+document.getElementById("radius").addEventListener("change", () => { if (huidigeLat) zoekMetCoordinaten(huidigeLat, huidigeLon); });
+document.getElementById("search-input").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
 </script>
-
 </body>
 </html>
