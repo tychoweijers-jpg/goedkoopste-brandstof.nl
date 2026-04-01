@@ -46,13 +46,14 @@
     .updated { font-size: 12px; color: #aaa; margin-top: 1.25rem; text-align: center; }
     .status { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
     .error { text-align: center; padding: 1rem; color: #A32D2D; font-size: 14px; background: #FFEBEE; border-radius: 8px; }
+    .laden { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
   </style>
 </head>
 <body>
  
 <div class="header">
   <div class="logo"><span class="logo-dot"></span> TankGoedkoop</div>
-  <div class="tagline">Actuele brandstofprijzen per tankstation — via ANWB</div>
+  <div class="tagline">Actuele brandstofprijzen per tankstation — 3x per dag bijgewerkt</div>
 </div>
  
 <div class="container">
@@ -87,7 +88,7 @@
     <span id="sort-lbl"></span>
   </div>
  
-  <div id="status-area"><div class="status">Voer een postcode in om te beginnen</div></div>
+  <div id="status-area"><div class="laden">Prijzen laden...</div></div>
   <div class="stations" id="stations-list"></div>
   <div class="updated" id="updated-time"></div>
 </div>
@@ -127,91 +128,70 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
  
+let alleStations = [];
+let bijgewerkt = "";
 let huidigeLat = null;
 let huidigeLon = null;
  
-async function haalStations(lat, lon, straal) {
-  const graden = straal / 111;
-  const lonGraden = straal / (111 * Math.cos(lat * Math.PI / 180));
-  const lat1 = (lat - graden).toFixed(5);
-  const lat2 = (lat + graden).toFixed(5);
-  const lon1 = (lon - lonGraden).toFixed(5);
-  const lon2 = (lon + lonGraden).toFixed(5);
-  const brandstof = document.getElementById("fuel-select").value;
- 
-  const url = `https://api.anwb.nl/routing/points-of-interest/v3/all?type-filter=FUEL_STATION&bounding-box-filter=${lat1},${lon1},${lat2},${lon2}&fuel-types-filter=${brandstof}`;
- 
+async function laadData() {
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Status " + res.status);
+    const res = await fetch("prijzen.json?t=" + Date.now());
+    if (!res.ok) throw new Error("Niet gevonden");
     const data = await res.json();
-    return data.value || [];
+    alleStations = data.stations || [];
+    bijgewerkt = data.bijgewerkt || "";
+    document.getElementById("status-area").innerHTML = '<div class="status">Voer een postcode in om te beginnen</div>';
+    if (bijgewerkt) {
+      document.getElementById("updated-time").textContent = "Prijzen bijgewerkt op: " + bijgewerkt + " (3x per dag via ANWB)";
+    }
   } catch(e) {
-    console.log("ANWB API fout: " + e);
-    return null;
+    document.getElementById("status-area").innerHTML = '<div class="error">Prijzen nog niet beschikbaar. Voer de GitHub Actions workflow uit.</div>';
   }
 }
  
-function toonStations(stations, lat, lon) {
+function render(lat, lon) {
   const brandstof = document.getElementById("fuel-select").value;
   const straal = parseInt(document.getElementById("radius").value);
-  const fuelLabel = {
-    EURO95: "Euro 95", DIESEL: "Diesel", AUTOGAS: "LPG", EURO98: "Euro 98"
-  }[brandstof] || brandstof;
+  const fuelLabel = { EURO95: "Euro 95", DIESEL: "Diesel", AUTOGAS: "LPG", EURO98: "Euro 98" }[brandstof] || brandstof;
  
-  // Voeg afstand en prijs toe
-  const verwerkt = stations.map(s => {
-    const afstand = haversine(lat, lon, s.coordinates.latitude, s.coordinates.longitude);
-    const prijsObj = (s.prices || []).find(p => p.fuelType === brandstof);
-    const prijs = prijsObj && prijsObj.value > 0 ? prijsObj.value : null;
-    return { ...s, afstand, prijs };
-  })
-  .filter(s => s.prijs && s.afstand <= straal)
-  .sort((a, b) => a.prijs - b.prijs)
-  .slice(0, 50);
+  const verwerkt = alleStations
+    .map(s => ({
+      ...s,
+      afstand: haversine(lat, lon, s.lat, s.lon),
+      prijs: s.prijzen && s.prijzen[brandstof] ? s.prijzen[brandstof] : null
+    }))
+    .filter(s => s.prijs && s.afstand <= straal)
+    .sort((a, b) => a.prijs - b.prijs)
+    .slice(0, 50);
  
   if (verwerkt.length === 0) {
-    document.getElementById("status-area").innerHTML = '<div class="error">Geen tankstations gevonden binnen ' + straal + ' km met bekende prijs. Vergroot de straal.</div>';
+    document.getElementById("status-area").innerHTML = '<div class="error">Geen stations gevonden binnen ' + straal + ' km. Vergroot de straal.</div>';
     ["stat-laag","stat-gem","stat-hoog"].forEach(id => document.getElementById(id).textContent = "—");
     document.getElementById("count").textContent = "";
     return;
   }
  
   document.getElementById("status-area").innerHTML = "";
- 
   const prijzen = verwerkt.map(s => s.prijs);
   document.getElementById("stat-laag").textContent = "€" + Math.min(...prijzen).toFixed(3);
   document.getElementById("stat-gem").textContent  = "€" + (prijzen.reduce((a,b)=>a+b,0)/prijzen.length).toFixed(3);
   document.getElementById("stat-hoog").textContent = "€" + Math.max(...prijzen).toFixed(3);
   document.getElementById("count").textContent = verwerkt.length + " tankstations gevonden";
   document.getElementById("sort-lbl").textContent = "goedkoopste eerst";
-  document.getElementById("updated-time").textContent = "Actuele prijzen via ANWB · bijgewerkt om " + new Date().toLocaleTimeString("nl-NL", {hour:"2-digit", minute:"2-digit"});
  
   document.getElementById("stations-list").innerHTML = verwerkt.map((s, i) => {
-    const naam = s.title || "Tankstation";
+    const naam = s.naam || "Tankstation";
     const c = getMerkKleur(naam);
-    const adres = s.address ? (s.address.streetAddress || "") : "";
-    const stad  = s.address ? (s.address.city || "") : "";
- 
-    // Tweede brandstof prijs
-    const dieselObj = (s.prices || []).find(p => p.fuelType === "DIESEL");
-    const e95Obj    = (s.prices || []).find(p => p.fuelType === "EURO95");
-    let anderePrijs = null;
-    let andereLabel = null;
-    if (brandstof === "EURO95" && dieselObj && dieselObj.value > 0) {
-      anderePrijs = dieselObj.value;
-      andereLabel = "Diesel";
-    } else if (brandstof === "DIESEL" && e95Obj && e95Obj.value > 0) {
-      anderePrijs = e95Obj.value;
-      andereLabel = "Euro 95";
-    }
- 
+    const stadTekst = s.stad ? " · " + s.stad : "";
+    const andereBrandstof = brandstof === "DIESEL" ? "EURO95" : "DIESEL";
+    const andereLabel = brandstof === "DIESEL" ? "Euro 95" : "Diesel";
+    const anderePrijs = s.prijzen && s.prijzen[andereBrandstof] ? s.prijzen[andereBrandstof] : null;
     return `
       <div class="card ${i===0?"cheapest":""}">
         <div class="logo-box" style="background:${c.bg};color:${c.text}">${naam.slice(0,2).toUpperCase()}</div>
         <div class="info">
           <div class="name">${naam}${i===0?'<span class="badge">Goedkoopst</span>':''}</div>
-          <div class="address">${adres}${stad ? " · " + stad : ""}</div>
+          <div class="address">${s.adres}${stadTekst}</div>
           <div class="dist">${s.afstand.toFixed(1)} km van je locatie</div>
         </div>
         <div class="prices">
@@ -223,22 +203,6 @@ function toonStations(stations, lat, lon) {
   }).join("");
 }
  
-async function zoekMetCoordinaten(lat, lon) {
-  huidigeLat = lat;
-  huidigeLon = lon;
-  const straal = parseInt(document.getElementById("radius").value);
-  document.getElementById("status-area").innerHTML = '<div class="status">Prijzen ophalen via ANWB...</div>';
-  document.getElementById("stations-list").innerHTML = "";
-  document.getElementById("count").textContent = "";
- 
-  const stations = await haalStations(lat, lon, straal);
-  if (stations === null) {
-    document.getElementById("status-area").innerHTML = '<div class="error">Kon de ANWB API niet bereiken. Probeer het later opnieuw.</div>';
-    return;
-  }
-  toonStations(stations, lat, lon);
-}
- 
 async function doSearch() {
   const query = document.getElementById("search-input").value.trim();
   if (!query) return;
@@ -248,15 +212,15 @@ async function doSearch() {
     const res = await fetch(url, { headers: { "Accept-Language": "nl" } });
     const data = await res.json();
     if (!data || data.length === 0) {
-      document.getElementById("status-area").innerHTML = '<div class="error">Postcode of stad niet gevonden.</div>';
+      document.getElementById("status-area").innerHTML = '<div class="error">Locatie niet gevonden.</div>';
       return;
     }
-    const lat = parseFloat(data[0].lat);
-    const lon = parseFloat(data[0].lon);
+    huidigeLat = parseFloat(data[0].lat);
+    huidigeLon = parseFloat(data[0].lon);
     document.getElementById("location-hint").textContent = "Resultaten voor: " + data[0].display_name.split(",").slice(0,2).join(", ");
-    await zoekMetCoordinaten(lat, lon);
+    render(huidigeLat, huidigeLon);
   } catch(e) {
-    document.getElementById("status-area").innerHTML = '<div class="error">Er ging iets mis. Controleer je internetverbinding.</div>';
+    document.getElementById("status-area").innerHTML = '<div class="error">Er ging iets mis.</div>';
   }
 }
  
@@ -264,9 +228,11 @@ function gebruikLocatie() {
   if (!navigator.geolocation) { alert("Locatie niet beschikbaar."); return; }
   document.getElementById("status-area").innerHTML = '<div class="status">Locatie bepalen...</div>';
   navigator.geolocation.getCurrentPosition(
-    async pos => {
+    pos => {
+      huidigeLat = pos.coords.latitude;
+      huidigeLon = pos.coords.longitude;
       document.getElementById("location-hint").textContent = "Resultaten voor je huidige locatie";
-      await zoekMetCoordinaten(pos.coords.latitude, pos.coords.longitude);
+      render(huidigeLat, huidigeLon);
     },
     () => {
       document.getElementById("status-area").innerHTML = '<div class="error">Locatie niet toegestaan. Voer een postcode in.</div>';
@@ -274,9 +240,11 @@ function gebruikLocatie() {
   );
 }
  
-document.getElementById("fuel-select").addEventListener("change", () => { if (huidigeLat) zoekMetCoordinaten(huidigeLat, huidigeLon); });
-document.getElementById("radius").addEventListener("change", () => { if (huidigeLat) zoekMetCoordinaten(huidigeLat, huidigeLon); });
+document.getElementById("fuel-select").addEventListener("change", () => { if (huidigeLat) render(huidigeLat, huidigeLon); });
+document.getElementById("radius").addEventListener("change", () => { if (huidigeLat) render(huidigeLat, huidigeLon); });
 document.getElementById("search-input").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
+ 
+laadData();
 </script>
 </body>
 </html>
