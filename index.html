@@ -13,7 +13,20 @@
     gtag('config', 'G-EWVML58C2F');
   </script>
 
-  <title>TankGoedkoop</title>
+  <!-- SEO -->
+  <title>TankGoedkoop – Goedkoopste brandstofprijzen bij jou in de buurt</title>
+  <meta name="description" content="Vergelijk actuele brandstofprijzen bij tankstations in jouw buurt. Vind de goedkoopste Euro 95, Diesel en LPG bij jou in de buurt. Dagelijks bijgewerkt." />
+  <meta name="keywords" content="brandstofprijzen, goedkoop tanken, benzineprijzen nederland, diesel prijs, euro 95 prijs, lpg prijs, tankstation vergelijken, goedkoopste benzine" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://goedkoopste-brandstof.nl/" />
+
+  <!-- Open Graph (voor delen op social media) -->
+  <meta property="og:title" content="TankGoedkoop – Goedkoopste brandstofprijzen bij jou in de buurt" />
+  <meta property="og:description" content="Vergelijk actuele brandstofprijzen bij tankstations in jouw buurt. Dagelijks bijgewerkt." />
+  <meta property="og:url" content="https://goedkoopste-brandstof.nl/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="nl_NL" />
+
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh}
@@ -100,10 +113,10 @@
 const KLEUREN={shell:{bg:"#FFF8E1",text:"#E65100"},bp:{bg:"#E8F5E9",text:"#1B5E20"},esso:{bg:"#FFEBEE",text:"#B71C1C"},tango:{bg:"#E3F2FD",text:"#0D47A1"},tinq:{bg:"#EDE7F6",text:"#4527A0"},tamoil:{bg:"#FFF3E0",text:"#BF360C"},gulf:{bg:"#F3E5F5",text:"#4A148C"},avia:{bg:"#E0F2F1",text:"#004D40"},texaco:{bg:"#FFECB3",text:"#E65100"},total:{bg:"#E8EAF6",text:"#283593"},q8:{bg:"#FCE4EC",text:"#880E4F"},argos:{bg:"#FBE9E7",text:"#BF360C"},ok:{bg:"#F1F8E9",text:"#33691E"},calpam:{bg:"#E0F7FA",text:"#006064"}};
 function kleur(naam){if(!naam)return{bg:"#F5F5F5",text:"#424242"};const n=naam.toLowerCase();for(const[k,v]of Object.entries(KLEUREN))if(n.includes(k))return v;return{bg:"#F5F5F5",text:"#424242"}}
 function hav(a,b,c,d){const R=6371,dL=(c-a)*Math.PI/180,dN=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dN/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))}
- 
+
 let stations=[];
 let lat=null,lon=null;
- 
+
 async function laad(){
   try{
     const r=await fetch("prijzen.json?t="+Date.now());
@@ -116,7 +129,7 @@ async function laad(){
     document.getElementById("status").innerHTML='<div class="err">Prijzen nog niet beschikbaar. Voer eerst de workflow uit via GitHub Actions.</div>';
   }
 }
- 
+
 function render(){
   if(!lat||stations.length===0)return;
   const bf=document.getElementById("brandstof").value;
@@ -125,13 +138,13 @@ function render(){
   const label=labels[bf]||bf;
   const anders=bf==="DIESEL"?"EURO95":"DIESEL";
   const andersLabel=bf==="DIESEL"?"Euro 95":"Diesel";
- 
+
   const lijst=stations
     .map(s=>({...s,afstand:hav(lat,lon,s.lat,s.lon),prijs:s.prijzen&&s.prijzen[bf]?s.prijzen[bf]:null}))
     .filter(s=>s.prijs&&s.afstand<=km)
     .sort((a,b)=>a.prijs-b.prijs)
     .slice(0,50);
- 
+
   if(lijst.length===0){
     document.getElementById("status").innerHTML='<div class="err">Geen stations gevonden binnen '+km+' km. Vergroot de straal.</div>';
     ["s-laag","s-gem","s-hoog"].forEach(id=>document.getElementById(id).textContent="—");
@@ -139,7 +152,7 @@ function render(){
     document.getElementById("lijst").innerHTML="";
     return;
   }
- 
+
   document.getElementById("status").innerHTML="";
   const p=lijst.map(s=>s.prijs);
   document.getElementById("s-laag").textContent="€"+Math.min(...p).toFixed(3);
@@ -147,7 +160,7 @@ function render(){
   document.getElementById("s-hoog").textContent="€"+Math.max(...p).toFixed(3);
   document.getElementById("count").textContent=lijst.length+" tankstations gevonden";
   document.getElementById("sort").textContent="goedkoopste eerst";
- 
+
   document.getElementById("lijst").innerHTML=lijst.map((s,i)=>{
     const c=kleur(s.naam);
     const ap=s.prijzen&&s.prijzen[anders]?s.prijzen[anders]:null;
@@ -166,7 +179,7 @@ function render(){
     </div>`;
   }).join("");
 }
- 
+
 async function doZoek(){
   const q=document.getElementById("zoek").value.trim();
   if(!q)return;
@@ -180,7 +193,7 @@ async function doZoek(){
     render();
   }catch(e){document.getElementById("status").innerHTML='<div class="err">Er ging iets mis.</div>';}
 }
- 
+
 function gebruikLocatie(){
   if(!navigator.geolocation){alert("Locatie niet beschikbaar.");return;}
   document.getElementById("status").innerHTML='<div class="msg">Locatie bepalen...</div>';
@@ -190,7 +203,7 @@ function gebruikLocatie(){
     render();
   },()=>{document.getElementById("status").innerHTML='<div class="err">Locatie niet toegestaan.</div>';});
 }
- 
+
 document.getElementById("brandstof").addEventListener("change",()=>{if(lat)render()});
 document.getElementById("straal").addEventListener("change",()=>{if(lat)render()});
 document.getElementById("zoek").addEventListener("keydown",e=>{if(e.key==="Enter")doZoek()});
