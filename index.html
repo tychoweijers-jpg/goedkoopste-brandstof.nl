@@ -3,30 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-EWVML58C2F"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-EWVML58C2F');
-  </script>
-
-  <!-- SEO -->
-  <title>TankGoedkoop – Goedkoopste brandstofprijzen bij jou in de buurt</title>
-  <meta name="description" content="Vergelijk actuele brandstofprijzen bij tankstations in jouw buurt. Vind de goedkoopste Euro 95, Diesel en LPG bij jou in de buurt. Dagelijks bijgewerkt." />
-  <meta name="keywords" content="brandstofprijzen, goedkoop tanken, benzineprijzen nederland, diesel prijs, euro 95 prijs, lpg prijs, tankstation vergelijken, goedkoopste benzine" />
-  <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://goedkoopste-brandstof.nl/" />
-
-  <!-- Open Graph (voor delen op social media) -->
-  <meta property="og:title" content="TankGoedkoop – Goedkoopste brandstofprijzen bij jou in de buurt" />
-  <meta property="og:description" content="Vergelijk actuele brandstofprijzen bij tankstations in jouw buurt. Dagelijks bijgewerkt." />
-  <meta property="og:url" content="https://goedkoopste-brandstof.nl/" />
-  <meta property="og:type" content="website" />
-  <meta property="og:locale" content="nl_NL" />
-
+  <title>TankGoedkoop</title>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh}
@@ -53,8 +30,8 @@
     .stat-lbl{font-size:12px;color:#888;margin-top:2px}
     .results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;font-size:13px;color:#888}
     .stations{display:flex;flex-direction:column;gap:10px}
-    .card{background:white;border-radius:12px;border:1px solid #e8e8e5;padding:1rem 1.25rem;display:flex;align-items:center;gap:16px}
-    .card:hover{border-color:#ccc}
+    .card{background:white;border-radius:12px;border:1px solid #e8e8e5;padding:1rem 1.25rem;display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
+    .card:hover{border-color:#E24B4A;box-shadow:0 2px 12px rgba(226,75,74,0.12)}
     .card.cheapest{border:2px solid #E24B4A}
     .logo-box{width:46px;height:46px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
     .info{flex:1;min-width:0}
@@ -62,6 +39,7 @@
     .badge{font-size:11px;padding:3px 8px;border-radius:6px;background:#FCEBEB;color:#A32D2D;font-weight:500}
     .address{font-size:13px;color:#666;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .dist{font-size:12px;color:#aaa;margin-top:2px}
+    .maps-hint{font-size:11px;color:#E24B4A;margin-top:3px;font-weight:500}
     .prices{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
     .price-main{font-size:22px;font-weight:700}
     .price-lbl{font-size:11px;color:#aaa}
@@ -130,6 +108,14 @@ async function laad(){
   }
 }
 
+function mapsUrl(s){
+  const q=encodeURIComponent((s.adres||"")+" "+(s.stad||"")+" Nederland");
+  if(s.lat&&s.lon){
+    return"https://www.google.com/maps/dir/?api=1&destination="+s.lat+","+s.lon+"&travelmode=driving";
+  }
+  return"https://www.google.com/maps/search/?api=1&query="+q;
+}
+
 function render(){
   if(!lat||stations.length===0)return;
   const bf=document.getElementById("brandstof").value;
@@ -164,19 +150,21 @@ function render(){
   document.getElementById("lijst").innerHTML=lijst.map((s,i)=>{
     const c=kleur(s.naam);
     const ap=s.prijzen&&s.prijzen[anders]?s.prijzen[anders]:null;
-    return`<div class="card ${i===0?"cheapest":""}">
+    const url=mapsUrl(s);
+    return`<a class="card ${i===0?"cheapest":""}" href="${url}" target="_blank" rel="noopener noreferrer">
       <div class="logo-box" style="background:${c.bg};color:${c.text}">${(s.naam||"?").slice(0,2).toUpperCase()}</div>
       <div class="info">
         <div class="name">${s.naam}${i===0?'<span class="badge">Goedkoopst</span>':''}</div>
         <div class="address">${s.adres}${s.stad?" · "+s.stad:""}</div>
         <div class="dist">${s.afstand.toFixed(1)} km van je locatie</div>
+        <div class="maps-hint">&#8599; Open in Google Maps</div>
       </div>
       <div class="prices">
         <div class="price-main">€${s.prijs.toFixed(3)}</div>
         <div class="price-lbl">${label} per liter</div>
         ${ap?`<div class="price-other">${andersLabel}: €${ap.toFixed(3)}</div>`:""}
       </div>
-    </div>`;
+    </a>`;
   }).join("");
 }
 
