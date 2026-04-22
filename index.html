@@ -1,42 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Goedkoopste Brandstof - Vergelijk Tankprijzen & Bespaar</title>
-  <meta name="description" content="Vind de goedkoopste brandstofprijzen bij tankstations in Nederland. Vergelijk Euro 95, diesel en LPG prijzen per stad en postcode. Bespaar gemiddeld â‚¬15 per tankbeurt." />
-  <link rel="canonical" href="https://goedkoopste-brandstof.nl/" />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Goedkoopste Brandstof - Vergelijk Tankprijzen" />
-  <meta property="og:description" content="Vind de goedkoopste brandstofprijzen bij tankstations in Nederland. Bespaar op je tankbeurt." />
-  <meta property="og:url" content="https://goedkoopste-brandstof.nl/" />
-  <meta property="og:site_name" content="Goedkoopste Brandstof" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Goedkoopste Brandstof - Vergelijk Tankprijzen" />
-  <meta name="twitter:description" content="Vind de goedkoopste brandstofprijzen bij tankstations in Nederland." />
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Goedkoopste Brandstof",
-    "alternateName": "TankGoedkoop",
-    "description": "Vergelijk actuele brandstofprijzen bij alle tankstations in Nederland en vind de goedkoopste plek om te tanken.",
-    "url": "https://goedkoopste-brandstof.nl/",
-    "applicationCategory": "UtilityApplication",
-    "operatingSystem": "All",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "EUR"
-    },
-    "areaServed": {
-      "@type": "Country",
-      "name": "Netherlands"
-    },
-    "inLanguage": "nl"
-  }
-  </script>
+  <title>TankGoedkoop</title>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh}
@@ -54,7 +21,6 @@
     .search-row button:hover{background:#c43b3a}
     .locatie-btn{margin-top:8px;background:none;border:1px solid #e0e0db;border-radius:8px;padding:8px 14px;font-size:13px;color:#666;cursor:pointer;width:100%}
     .locatie-btn:hover{background:#f5f5f3}
-    .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .radius-row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:#666}
     .radius-row input[type=range]{flex:1}
     .hint{font-size:13px;color:#888;margin-top:8px}
@@ -90,7 +56,6 @@
 </div>
 <div class="container">
   <div class="search-box">
-    <h1 class="visually-hidden">Goedkoopste brandstofprijzen vergelijken</h1>
     <div class="search-row">
       <input type="text" id="zoek" placeholder="Postcode of stad (bijv. 1011 of Amsterdam)..."/>
       <select id="brandstof">
@@ -101,7 +66,7 @@
       </select>
       <button onclick="doZoek()">Zoek</button>
     </div>
-    <button class="locatie-btn" onclick="gebruikLocatie()">ðŸ“ Gebruik mijn huidige locatie</button>
+    <button class="locatie-btn" onclick="gebruikLocatie()">📍 Gebruik mijn huidige locatie</button>
     <div class="radius-row">
       Straal: <input type="range" id="straal" min="1" max="30" value="5" step="1"
         oninput="document.getElementById('straal-val').textContent=this.value"/>
@@ -110,9 +75,9 @@
     <div class="hint" id="hint">Voer een postcode in of gebruik je huidige locatie</div>
   </div>
   <div class="stats">
-    <div class="stat"><div class="stat-val" id="s-laag">â€”</div><div class="stat-lbl">Laagste prijs</div></div>
-    <div class="stat"><div class="stat-val" id="s-gem">â€”</div><div class="stat-lbl">Gemiddeld</div></div>
-    <div class="stat"><div class="stat-val" id="s-hoog">â€”</div><div class="stat-lbl">Hoogste prijs</div></div>
+    <div class="stat"><div class="stat-val" id="s-laag">—</div><div class="stat-lbl">Laagste prijs</div></div>
+    <div class="stat"><div class="stat-val" id="s-gem">—</div><div class="stat-lbl">Gemiddeld</div></div>
+    <div class="stat"><div class="stat-val" id="s-hoog">—</div><div class="stat-lbl">Hoogste prijs</div></div>
   </div>
   <div class="results-header">
     <span id="count"></span>
@@ -168,7 +133,7 @@ function render(){
 
   if(lijst.length===0){
     document.getElementById("status").innerHTML='<div class="err">Geen stations gevonden binnen '+km+' km. Vergroot de straal.</div>';
-    ["s-laag","s-gem","s-hoog"].forEach(id=>document.getElementById(id).textContent="â€”");
+    ["s-laag","s-gem","s-hoog"].forEach(id=>document.getElementById(id).textContent="—");
     document.getElementById("count").textContent="";
     document.getElementById("lijst").innerHTML="";
     return;
@@ -176,9 +141,9 @@ function render(){
 
   document.getElementById("status").innerHTML="";
   const p=lijst.map(s=>s.prijs);
-  document.getElementById("s-laag").textContent="â‚¬"+Math.min(...p).toFixed(3);
-  document.getElementById("s-gem").textContent="â‚¬"+(p.reduce((a,b)=>a+b,0)/p.length).toFixed(3);
-  document.getElementById("s-hoog").textContent="â‚¬"+Math.max(...p).toFixed(3);
+  document.getElementById("s-laag").textContent="€"+Math.min(...p).toFixed(3);
+  document.getElementById("s-gem").textContent="€"+(p.reduce((a,b)=>a+b,0)/p.length).toFixed(3);
+  document.getElementById("s-hoog").textContent="€"+Math.max(...p).toFixed(3);
   document.getElementById("count").textContent=lijst.length+" tankstations gevonden";
   document.getElementById("sort").textContent="goedkoopste eerst";
 
@@ -190,14 +155,14 @@ function render(){
       <div class="logo-box" style="background:${c.bg};color:${c.text}">${(s.naam||"?").slice(0,2).toUpperCase()}</div>
       <div class="info">
         <div class="name">${s.naam}${i===0?'<span class="badge">Goedkoopst</span>':''}</div>
-        <div class="address">${s.adres}${s.stad?" Â· "+s.stad:""}</div>
+        <div class="address">${s.adres}${s.stad?" · "+s.stad:""}</div>
         <div class="dist">${s.afstand.toFixed(1)} km van je locatie</div>
         <div class="maps-hint">&#8599; Open in Google Maps</div>
       </div>
       <div class="prices">
-        <div class="price-main">â‚¬${s.prijs.toFixed(3)}</div>
+        <div class="price-main">€${s.prijs.toFixed(3)}</div>
         <div class="price-lbl">${label} per liter</div>
-        ${ap?`<div class="price-other">${andersLabel}: â‚¬${ap.toFixed(3)}</div>`:""}
+        ${ap?`<div class="price-other">${andersLabel}: €${ap.toFixed(3)}</div>`:""}
       </div>
     </a>`;
   }).join("");
