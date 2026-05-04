@@ -63,7 +63,7 @@
     .header{background:white;padding:1.25rem 1.5rem;border-bottom:1px solid #e8e8e5}
     .logo{font-size:22px;font-weight:600;display:flex;align-items:center;gap:8px}
     .logo-dot{width:10px;height:10px;border-radius:50%;background:#E24B4A;display:inline-block}
-    .tagline{font-size:13px;color:#888;margin-top:2px}
+    .tagline{font-size:13px;color:#666;margin-top:2px}
     .container{max-width:700px;margin:0 auto;padding:1.5rem 1rem 3rem}
     .search-box{background:white;border-radius:12px;border:1px solid #e8e8e5;padding:1.25rem;margin-bottom:1rem}
     .search-row{display:flex;gap:8px;flex-wrap:wrap}
@@ -76,11 +76,11 @@
     .locatie-btn:hover{background:#f5f5f3}
     .radius-row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:#666}
     .radius-row input[type=range]{flex:1}
-    .hint{font-size:13px;color:#888;margin-top:8px}
+    .hint{font-size:13px;color:#555;margin-top:8px}
     .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem}
     .stat{background:white;border-radius:10px;border:1px solid #e8e8e5;padding:.85rem 1rem}
     .stat-val{font-size:20px;font-weight:600}
-    .stat-lbl{font-size:12px;color:#888;margin-top:2px}
+    .stat-lbl{font-size:12px;color:#555;margin-top:2px}
     .results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;font-size:13px;color:#888}
     .stations{display:flex;flex-direction:column;gap:10px}
     .card{background:white;border-radius:12px;border:1px solid #e8e8e5;padding:1rem 1.25rem;display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
@@ -98,12 +98,13 @@
     .price-lbl{font-size:11px;color:#aaa}
     .price-other{font-size:12px;color:#aaa}
     .updated{font-size:12px;color:#aaa;margin-top:1.25rem;text-align:center}
-    .msg{text-align:center;padding:2rem;color:#888;font-size:14px}
+    .msg{text-align:center;padding:2rem;color:#666;font-size:14px}
     .err{text-align:center;padding:1rem;color:#A32D2D;font-size:14px;background:#FFEBEE;border-radius:8px}
     .seo-tekst{margin-top:3rem;padding:1.5rem;background:white;border-radius:12px;border:1px solid #e8e8e5;font-size:13px;color:#888;line-height:1.7}
     .seo-tekst h2{font-size:15px;font-weight:600;color:#555;margin-bottom:0.5rem}
     .seo-tekst p{margin-bottom:0.75rem}
     .seo-tekst p:last-child{margin-bottom:0}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   </style>
 </head>
 <body>
@@ -111,11 +112,11 @@
   <div class="logo"><span class="logo-dot"></span> TankGoedkoop</div>
   <div class="tagline">Actuele brandstofprijzen per tankstation</div>
 </div>
-<div class="container">
+<main id="main-content"><div class="container">
   <div class="search-box">
     <div class="search-row">
-      <input type="text" id="zoek" placeholder="Postcode of stad (bijv. 1011 of Amsterdam)..."/>
-      <select id="brandstof">
+      <label for="zoek" class="sr-only">Zoek op postcode of stad</label><input type="text" id="zoek" placeholder="Postcode of stad (bijv. 1011 of Amsterdam)..."/>
+      <label for="brandstof" class="sr-only">Kies brandstoftype</label><select id="brandstof" aria-label="Brandstoftype">
         <option value="EURO95">Euro 95</option>
         <option value="DIESEL">Diesel</option>
         <option value="AUTOGAS">LPG</option>
@@ -125,6 +126,8 @@
     </div>
     <button class="locatie-btn" onclick="gebruikLocatie()">📍 Gebruik mijn huidige locatie</button>
     <div class="radius-row">
+      
+      <label for="straal" class="sr-only">Zoekstraal in kilometers</label>
       Straal: <input type="range" id="straal" min="1" max="30" value="5" step="1"
         oninput="document.getElementById('straal-val').textContent=this.value"/>
       <span id="straal-val">5</span> km
@@ -263,5 +266,6 @@ document.getElementById("straal").addEventListener("change",()=>{if(lat)render()
 document.getElementById("zoek").addEventListener("keydown",e=>{if(e.key==="Enter")doZoek()});
 laad();
 </script>
+</main>
 </body>
 </html>
