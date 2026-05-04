@@ -3,7 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TankGoedkoop</title>
+
+  <!-- SEO: Title & Description -->
+  <title>Goedkoopste Brandstof Nederland | Actuele Benzine & Dieselprijzen | TankGoedkoop</title>
+  <meta name="description" content="Vind de goedkoopste benzine, diesel en LPG bij jou in de buurt. Actuele brandstofprijzen van alle tankstations in Nederland. Vergelijk Shell, BP, Esso, Tango en meer." />
+  <meta name="keywords" content="goedkoopste benzine, goedkoopste diesel, brandstofprijzen, benzineprijs vandaag, dieselprijs vandaag, tankstation bij mij in de buurt, goedkoop tanken, LPG prijs, euro 95 prijs, benzine vergelijken, diesel vergelijken, goedkoopste tankstation, brandstof vergelijken Nederland, tanken Amsterdam, tanken Rotterdam, tanken Utrecht, tanken Den Haag, tanken Eindhoven, tanken Groningen, tanken Tilburg, tanken Almere, tanken Breda, tanken Nijmegen, tanken Apeldoorn, tanken Haarlem, tanken Arnhem, tanken Zaandam, tanken Amersfoort, Shell prijs, BP prijs, Esso prijs, Tango prijs, Tinq prijs, Tamoil prijs, Gulf prijs, Q8 prijs, Argos prijs, brandstof app, benzine app" />
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://goedkoopste-brandstof.nl/" />
+
+  <!-- Open Graph (WhatsApp, Facebook, LinkedIn) -->
+  <meta property="og:title" content="Goedkoopste Brandstof bij jou in de buurt | TankGoedkoop" />
+  <meta property="og:description" content="Actuele benzine- en dieselprijzen van alle tankstations in Nederland. Vind direct het goedkoopste tankstation bij jou in de buurt." />
+  <meta property="og:url" content="https://goedkoopste-brandstof.nl/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="nl_NL" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Goedkoopste Brandstof Nederland | TankGoedkoop" />
+  <meta name="twitter:description" content="Vergelijk actuele benzine- en dieselprijzen bij tankstations bij jou in de buurt." />
+
+  <!-- Extra SEO -->
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="TankGoedkoop" />
+  <meta name="geo.region" content="NL" />
+  <meta name="geo.country" content="Netherlands" />
+  <meta name="language" content="Nederlands" />
+
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-EWVML58C2F"></script>
   <script>
@@ -12,6 +39,24 @@
     gtag('js', new Date());
     gtag('config', 'G-EWVML58C2F');
   </script>
+
+  <!-- Structured Data (Google zoekresultaten) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "TankGoedkoop",
+    "url": "https://goedkoopste-brandstof.nl/",
+    "description": "Actuele brandstofprijzen van tankstations in Nederland. Vergelijk benzine, diesel en LPG prijzen bij jou in de buurt.",
+    "inLanguage": "nl-NL",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://goedkoopste-brandstof.nl/?zoek={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh}
@@ -55,6 +100,10 @@
     .updated{font-size:12px;color:#aaa;margin-top:1.25rem;text-align:center}
     .msg{text-align:center;padding:2rem;color:#888;font-size:14px}
     .err{text-align:center;padding:1rem;color:#A32D2D;font-size:14px;background:#FFEBEE;border-radius:8px}
+    .seo-tekst{margin-top:3rem;padding:1.5rem;background:white;border-radius:12px;border:1px solid #e8e8e5;font-size:13px;color:#888;line-height:1.7}
+    .seo-tekst h2{font-size:15px;font-weight:600;color:#555;margin-bottom:0.5rem}
+    .seo-tekst p{margin-bottom:0.75rem}
+    .seo-tekst p:last-child{margin-bottom:0}
   </style>
 </head>
 <body>
@@ -94,7 +143,16 @@
   <div id="status"><div class="msg">Prijzen laden...</div></div>
   <div class="stations" id="lijst"></div>
   <div class="updated" id="updated"></div>
+
+  <!-- SEO tekst onderaan de pagina -->
+  <div class="seo-tekst">
+    <h2>Goedkoopste benzine en diesel bij jou in de buurt</h2>
+    <p>TankGoedkoop toont de actuele brandstofprijzen van tankstations in heel Nederland. Vergelijk de prijs van Euro 95, diesel, Euro 98 en LPG bij stations zoals Shell, BP, Esso, Tango, Tinq, Tamoil, Gulf, Q8, Argos en meer.</p>
+    <p>Vind het goedkoopste tankstation in Amsterdam, Rotterdam, Utrecht, Den Haag, Eindhoven, Groningen, Tilburg, Almere, Breda, Nijmegen, Apeldoorn, Haarlem, Arnhem, Zaandam, Amersfoort, Zwolle, Enschede, Maastricht, Leiden en alle andere plaatsen in Nederland.</p>
+    <p>De benzineprijs en dieselprijs worden regelmatig bijgewerkt zodat jij altijd weet waar je het voordeligst kunt tanken. Gebruik je postcode of huidige locatie om direct de goedkoopste brandstofprijzen bij jou in de buurt te zien.</p>
+  </div>
 </div>
+
 <script>
 const KLEUREN={shell:{bg:"#FFF8E1",text:"#E65100"},bp:{bg:"#E8F5E9",text:"#1B5E20"},esso:{bg:"#FFEBEE",text:"#B71C1C"},tango:{bg:"#E3F2FD",text:"#0D47A1"},tinq:{bg:"#EDE7F6",text:"#4527A0"},tamoil:{bg:"#FFF3E0",text:"#BF360C"},gulf:{bg:"#F3E5F5",text:"#4A148C"},avia:{bg:"#E0F2F1",text:"#004D40"},texaco:{bg:"#FFECB3",text:"#E65100"},total:{bg:"#E8EAF6",text:"#283593"},q8:{bg:"#FCE4EC",text:"#880E4F"},argos:{bg:"#FBE9E7",text:"#BF360C"},ok:{bg:"#F1F8E9",text:"#33691E"},calpam:{bg:"#E0F7FA",text:"#006064"}};
 function kleur(naam){if(!naam)return{bg:"#F5F5F5",text:"#424242"};const n=naam.toLowerCase();for(const[k,v]of Object.entries(KLEUREN))if(n.includes(k))return v;return{bg:"#F5F5F5",text:"#424242"}}
